@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="
+       http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context.xsd
+       http://www.springframework.org/schema/mvc
+       http://www.springframework.org/schema/mvc/spring-mvc.xsd
+       http://www.springframework.org/schema/tx
+       http://www.springframework.org/schema/tx/spring-tx.xsd
+">
+
+    <!--spring除了controller不扫描之外，剩下的annotation都扫描-->
+    <context:component-scan base-package="com.zx" use-default-filters="false">
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"></context:exclude-filter>
+    </context:component-scan>
+
+    <!--引入数据库配置文件-->
+    <context:property-placeholder location="classpath:db.properties"></context:property-placeholder>
+
+    <!--进行数据库配置，在mybatis-config中配置了，也可以在此文件中进行配置-->
+    <!--次文件可以完全取代mybatis-config文件-->
+    <!--使用druid数据连接方式-->
+
+    <!--
+        连接数据库，应该在此文件中配置
+        因为在整合mybatis-confing.xml文件时用到了id="dataSource"
+    -->
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+        <property name="url" value="${jdbc.url}"></property>
+        <property name="username" value="${jdbc.username}"></property>
+        <property name="password" value="${jdbc.pass}"></property>
+        <property name="driverClassName" value="${jdbc.driverClassName}"></property>
+    </bean>
+
+    <!--配置事务管理器-->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+
+    <!--开启事务控制-->
+    <tx:annotation-driven transaction-manager="transactionManager"></tx:annotation-driven>
+
+    <!--整合mybatis-->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="configLocation" value="classpath:mybatis-config.xml"></property>
+        <property name="dataSource" ref="dataSource"></property>
+        <!---在mybatis-config.xml文件中
+               设置了如下
+
+            <mappers>
+                <package name="com.zx.dao"></package>
+            </mappers>
+            就不能再开启
+            <property name="mapperLocations" value="classpath:com/zx/dao/*.xml"></property>
+
+            要是在spring.xml文件开启       name="mapperLocations" value="classpath:com/zx/dao/*.xml"
+            则在mybatis-config.xml文件中
+            注销
+            <mappers>
+                <package name="com.zx.dao"></package>
+            </mappers>
+        -->
+        <!--<property name="mapperLocations" value="classpath:com/zx/dao/*.xml"></property>-->
+    </bean>
+
+    <!--定义mybatis扫描器，扫描映射文件-->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.zx.dao"></property>
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"></property>
+    </bean>
+
+
+
+</beans>
